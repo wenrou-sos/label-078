@@ -1,27 +1,35 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useLampStore } from '@/stores/lamp'
-import { LampType, LampStatus, LampTypeLabel, LampStatusLabel } from '@/types'
-import { X, Calendar, User, Clock, Coins } from 'lucide-vue-next'
+import { useBillStore, calculateRenewalAmount } from '@/stores/bill'
+import { LampType, LampStatus, LampTypeLabel, LampStatusLabel, LampPrice } from '@/types'
+import { X, Calendar, User, Clock, Coins, CreditCard } from 'lucide-vue-next'
 import { daysBetween, getTodayStr } from '@/lib/utils'
 
 const lampStore = useLampStore()
+const billStore = useBillStore()
 
 const showRenewForm = ref(false)
 const renewDays = ref(30)
-const renewAmount = ref(150)
 
 const lamp = computed(() => lampStore.selectedLamp)
 
-watch(showRenewForm, (val) => {
-  if (val) {
-    renewDays.value = 30
-    renewAmount.value = renewDays.value * 5
-  }
+const priceConfig = computed(() => {
+  if (!lamp.value) return { unit: 'day' as const, price: 5 }
+  return LampPrice[lamp.value.type]
 })
 
-watch(renewDays, (days) => {
-  renewAmount.value = days * 5
+const renewAmount = computed(() => {
+  if (!lamp.value) return 0
+  return calculateRenewalAmount(lamp.value.type, renewDays.value)
+})
+
+const isYearlyPricing = computed(() => priceConfig.value.unit === 'year')
+
+watch(showRenewForm, (val) => {
+  if (val && lamp.value) {
+    renewDays.value = isYearlyPricing.value ? 365 : 30
+  }
 })
 
 const lampIcon = computed(() => {
@@ -67,6 +75,8 @@ function closeModal() {
 function handleRenew() {
   if (!lamp.value) return
   lampStore.renewLamp(lamp.value.id, renewDays.value, renewAmount.value)
+  const bill = billStore.createBillFromRenewal(lamp.value, renewDays.value, renewAmount.value)
+  billStore.addBill(bill)
   showRenewForm.value = false
 }
 
@@ -146,32 +156,40 @@ function handleBackdropClick(e: MouseEvent) {
 
           <div v-else class="renew-form">
             <h3 class="form-title">续费登记</h3>
+            <div class="price-info">
+              <CreditCard :size="16" />
+              <span>{{ LampTypeLabel[lamp.type] }}计费标准：</span>
+              <span class="price-value">
+                ¥{{ priceConfig.price }}/{{ isYearlyPricing ? '年' : '天' }}
+              </span>
+            </div>
             <div class="form-row">
-              <label>续供天数</label>
+              <label>续供{{ isYearlyPricing ? '年数' : '天数' }}</label>
               <input
                 v-model.number="renewDays"
                 type="number"
-                min="1"
+                :min="isYearlyPricing ? 365 : 1"
+                :step="isYearlyPricing ? 365 : 1"
                 class="form-input"
               />
-              <span class="form-unit">天</span>
+              <span class="form-unit">{{ isYearlyPricing ? '天' : '天' }}</span>
             </div>
             <div class="form-row">
-              <label>金额</label>
-              <input
-                v-model.number="renewAmount"
-                type="number"
-                min="0"
-                class="form-input"
-              />
-              <span class="form-unit">元</span>
+              <label>应收金额</label>
+              <div class="amount-display">
+                <span class="currency">¥</span>
+                <span class="amount">{{ renewAmount }}</span>
+                <span class="amount-hint">
+                  (自动计算：{{ priceConfig.price }} × {{ isYearlyPricing ? Math.ceil(renewDays / 365) + '年' : renewDays + '天' }})
+                </span>
+              </div>
             </div>
             <div class="form-actions">
               <button class="cancel-btn" @click="showRenewForm = false">
                 取消
               </button>
               <button class="confirm-btn" @click="handleRenew">
-                确认续费
+                确认续费并生成账单
               </button>
             </div>
           </div>
@@ -434,6 +452,24 @@ function handleBackdropClick(e: MouseEvent) {
   margin: 0 0 16px 0;
 }
 
+.price-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #795548;
+
+  .price-value {
+    font-weight: 600;
+    color: #e65100;
+  }
+}
+
 .form-row {
   display: flex;
   align-items: center;
@@ -467,6 +503,35 @@ function handleBackdropClick(e: MouseEvent) {
   font-size: 13px;
   color: #999;
   width: 24px;
+}
+
+.amount-display {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #fdf9f0 0%, #fff 100%);
+  border: 1px solid #e8d8b8;
+  border-radius: 8px;
+
+  .currency {
+    font-size: 16px;
+    font-weight: 500;
+    color: #D4A853;
+  }
+
+  .amount {
+    font-size: 22px;
+    font-weight: 700;
+    color: #D4A853;
+  }
+
+  .amount-hint {
+    font-size: 12px;
+    color: #999;
+    margin-left: 8px;
+  }
 }
 
 .form-actions {

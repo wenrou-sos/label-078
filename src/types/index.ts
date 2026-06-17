@@ -19,6 +19,44 @@ export const LampOilConsumption: Record<LampType, number> = {
   [LampType.ETERNAL]: 0
 }
 
+export interface LampPriceConfig {
+  unit: 'day' | 'year'
+  price: number
+}
+
+export const LampPrice: Record<LampType, LampPriceConfig> = {
+  [LampType.GHEE]: { unit: 'day', price: 5 },
+  [LampType.LOTUS]: { unit: 'day', price: 8 },
+  [LampType.ELECTRONIC]: { unit: 'day', price: 3 },
+  [LampType.ETERNAL]: { unit: 'year', price: 2000 }
+}
+
+export enum BillStatus {
+  UNPAID = 'unpaid',
+  PAID = 'paid'
+}
+
+export const BillStatusLabel: Record<BillStatus, string> = {
+  [BillStatus.UNPAID]: '未付款',
+  [BillStatus.PAID]: '已付款'
+}
+
+export interface Bill {
+  id: string
+  date: string
+  lampId: string
+  devoteeName: string
+  lampType: LampType
+  hallName: string
+  lampPosition: string
+  days: number
+  unitPrice: number
+  totalAmount: number
+  status: BillStatus
+  paidDate?: string
+  operator: string
+}
+
 export enum LampStatus {
   ON = 'on',
   WARNING = 'warning',

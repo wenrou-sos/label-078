@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LampOverview from '@/views/LampOverview.vue'
 import WorkshopManage from '@/views/WorkshopManage.vue'
 import StatisticsView from '@/views/StatisticsView.vue'
+import BillView from '@/views/BillView.vue'
 
 const routes = [
   {
@@ -21,6 +22,12 @@ const routes = [
     name: 'statistics',
     component: StatisticsView,
     meta: { title: '消耗统计' }
+  },
+  {
+    path: '/bills',
+    name: 'bills',
+    component: BillView,
+    meta: { title: '账单管理' }
   }
 ]
 

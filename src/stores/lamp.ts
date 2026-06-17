@@ -108,6 +108,7 @@ export const useLampStore = defineStore('lamp', () => {
 
   return {
     hallList,
+    lamps,
     currentHallId,
     currentHall,
     currentHallLamps,

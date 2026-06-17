@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { Home, Factory, BarChart3, Menu, X } from 'lucide-vue-next'
+import { Home, Factory, BarChart3, Menu, X, Receipt } from 'lucide-vue-next'
 
 const route = useRoute()
 const sidebarOpen = ref(true)
@@ -9,7 +9,8 @@ const sidebarOpen = ref(true)
 const menuItems = [
   { path: '/', name: '供灯总览', icon: Home },
   { path: '/workshop', name: '作坊管理', icon: Factory },
-  { path: '/statistics', name: '消耗统计', icon: BarChart3 }
+  { path: '/statistics', name: '消耗统计', icon: BarChart3 },
+  { path: '/bills', name: '账单管理', icon: Receipt }
 ]
 
 const currentPageTitle = computed(() => {
