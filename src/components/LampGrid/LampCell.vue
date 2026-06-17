@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { LampPosition } from '@/types'
 import { LampType, LampStatus, LampTypeLabel, LampStatusLabel } from '@/types'
+import { daysBetween, getTodayStr } from '@/lib/utils'
 
 const props = defineProps<{
   lamp: LampPosition
@@ -40,10 +41,7 @@ const lampIcon = computed(() => {
 })
 
 const daysLeft = computed(() => {
-  const today = new Date()
-  const end = new Date(props.lamp.endDate)
-  const diff = Math.floor((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  return diff
+  return daysBetween(getTodayStr(), props.lamp.endDate)
 })
 </script>
 

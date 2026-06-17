@@ -31,6 +31,15 @@ const avgDailyConsumption = computed(() => {
   if (statsStore.dailyTotalConsumption.length === 0) return 0
   return Math.round(totalConsumption.value / statsStore.dailyTotalConsumption.length)
 })
+
+const rankingHalls = computed(() => {
+  return lampStore.hallList
+    .map(hall => ({
+      ...hall,
+      total: (statsStore.consumptionByHall[hall.id] || []).reduce((a, b) => a + b, 0)
+    }))
+    .sort((a, b) => b.total - a.total)
+})
 </script>
 
 <template>
@@ -94,14 +103,14 @@ const avgDailyConsumption = computed(() => {
         <h3 class="card-title">消耗排行</h3>
         <div class="ranking-list">
           <div
-            v-for="(hall, index) in lampStore.hallList"
+            v-for="(hall, index) in rankingHalls"
             :key="hall.id"
             class="ranking-item"
           >
             <span class="rank-num" :class="'rank-' + (index + 1)">{{ index + 1 }}</span>
             <span class="rank-name">{{ hall.name }}</span>
             <span class="rank-value">
-              {{ (statsStore.consumptionByHall[hall.id] || []).reduce((a, b) => a + b, 0) }} 盏
+              {{ hall.total }} 盏
             </span>
           </div>
         </div>

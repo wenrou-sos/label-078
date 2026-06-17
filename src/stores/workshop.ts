@@ -3,27 +3,34 @@ import { ref, computed } from 'vue'
 import type { OilUsageRecord, ProductionRecord } from '@/types'
 import { oilUsageList, productionList } from '@/mock/workshopData'
 import { LampType } from '@/types'
+import { isCurrentMonth } from '@/lib/utils'
 
 export const useWorkshopStore = defineStore('workshop', () => {
   const oilUsages = ref<OilUsageRecord[]>([...oilUsageList])
   const productions = ref<ProductionRecord[]>([...productionList])
 
   const monthlyOilUsage = computed(() => {
-    return oilUsages.value.reduce((sum, item) => sum + item.quantity, 0)
+    return oilUsages.value
+      .filter(item => isCurrentMonth(item.date))
+      .reduce((sum, item) => sum + item.quantity, 0)
   })
 
   const monthlyProduction = computed(() => {
-    return productions.value.reduce((sum, item) => sum + item.quantity, 0)
+    return productions.value
+      .filter(item => isCurrentMonth(item.date))
+      .reduce((sum, item) => sum + item.quantity, 0)
   })
 
   const productionByType = computed(() => {
     const result: Record<string, number> = {}
-    productions.value.forEach(item => {
-      if (!result[item.type]) {
-        result[item.type] = 0
-      }
-      result[item.type] += item.quantity
-    })
+    productions.value
+      .filter(item => isCurrentMonth(item.date))
+      .forEach(item => {
+        if (!result[item.type]) {
+          result[item.type] = 0
+        }
+        result[item.type] += item.quantity
+      })
     return result
   })
 

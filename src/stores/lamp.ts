@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type { LampPosition, Hall, RenewalRecord } from '@/types'
 import { LampStatus } from '@/types'
 import { halls, lampList, getLampsByHall } from '@/mock/lampData'
+import { daysBetween, formatDate, getTodayStr } from '@/lib/utils'
 
 export const useLampStore = defineStore('lamp', () => {
   const hallList = ref<Hall[]>(halls)
@@ -50,8 +51,7 @@ export const useLampStore = defineStore('lamp', () => {
     const lamp = lamps.value.find(l => l.id === lampId)
     if (!lamp) return
 
-    const today = new Date()
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    const todayStr = getTodayStr()
 
     const renewalRecord: RenewalRecord = {
       id: `r_${Date.now()}`,
@@ -65,11 +65,9 @@ export const useLampStore = defineStore('lamp', () => {
 
     const endDate = new Date(lamp.endDate)
     endDate.setDate(endDate.getDate() + days)
-    lamp.endDate = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`
+    lamp.endDate = formatDate(endDate)
 
-    const todayDate = new Date()
-    const end = new Date(lamp.endDate)
-    const daysLeft = Math.floor((end.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24))
+    const daysLeft = daysBetween(todayStr, lamp.endDate)
 
     if (daysLeft < 0) {
       lamp.status = LampStatus.OFF

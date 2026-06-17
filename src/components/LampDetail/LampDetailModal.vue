@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useLampStore } from '@/stores/lamp'
 import { LampType, LampStatus, LampTypeLabel, LampStatusLabel } from '@/types'
 import { X, Calendar, User, Clock, Coins } from 'lucide-vue-next'
+import { daysBetween, getTodayStr } from '@/lib/utils'
 
 const lampStore = useLampStore()
 
@@ -55,9 +56,7 @@ const statusClass = computed(() => {
 
 const daysLeft = computed(() => {
   if (!lamp.value) return 0
-  const today = new Date()
-  const end = new Date(lamp.value.endDate)
-  return Math.floor((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  return daysBetween(getTodayStr(), lamp.value.endDate)
 })
 
 function closeModal() {
