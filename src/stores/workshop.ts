@@ -2,12 +2,14 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { OilUsageRecord, ProductionRecord } from '@/types'
 import { oilUsageList, productionList } from '@/mock/workshopData'
-import { LampType } from '@/types'
+import { LampType, LampOilConsumption } from '@/types'
 import { isCurrentMonth } from '@/lib/utils'
 
 export const useWorkshopStore = defineStore('workshop', () => {
   const oilUsages = ref<OilUsageRecord[]>([...oilUsageList])
   const productions = ref<ProductionRecord[]>([...productionList])
+
+  const LOW_STOCK_THRESHOLD = 10
 
   const filterStartDate = ref<string>('')
   const filterEndDate = ref<string>('')
@@ -24,6 +26,34 @@ export const useWorkshopStore = defineStore('workshop', () => {
 
   const filteredProductions = computed(() => {
     return productions.value.filter(item => isDateInRange(item.date))
+  })
+
+  const totalOilStocked = computed(() => {
+    return oilUsages.value.reduce((sum, item) => sum + item.quantity, 0)
+  })
+
+  const totalOilConsumed = computed(() => {
+    return productions.value.reduce((sum, item) => {
+      return sum + item.quantity * (LampOilConsumption[item.type] || 0)
+    }, 0)
+  })
+
+  const currentOilStock = computed(() => {
+    return +(totalOilStocked.value - totalOilConsumed.value).toFixed(2)
+  })
+
+  const canMakeGhee = computed(() => {
+    if (currentOilStock.value <= 0) return 0
+    return Math.floor(currentOilStock.value / LampOilConsumption[LampType.GHEE])
+  })
+
+  const canMakeLotus = computed(() => {
+    if (currentOilStock.value <= 0) return 0
+    return Math.floor(currentOilStock.value / LampOilConsumption[LampType.LOTUS])
+  })
+
+  const isLowStock = computed(() => {
+    return currentOilStock.value < LOW_STOCK_THRESHOLD
   })
 
   const monthlyOilUsage = computed(() => {
@@ -101,6 +131,12 @@ export const useWorkshopStore = defineStore('workshop', () => {
     monthlyOilUsage,
     monthlyProduction,
     productionByType,
+    totalOilStocked,
+    totalOilConsumed,
+    currentOilStock,
+    canMakeGhee,
+    canMakeLotus,
+    isLowStock,
     setDateRange,
     resetDateRange,
     addOilUsage,

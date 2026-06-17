@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useWorkshopStore } from '@/stores/workshop'
-import { LampType, LampTypeLabel } from '@/types'
-import { Plus, Trash2, Droplets, Package, TrendingUp } from 'lucide-vue-next'
+import { LampType, LampTypeLabel, LampOilConsumption } from '@/types'
+import { Plus, Trash2, Droplets, Package, TrendingUp, AlertTriangle, CheckCircle, Warehouse } from 'lucide-vue-next'
 
 const workshopStore = useWorkshopStore()
 
 const activeTab = ref<'oil' | 'production'>('oil')
 const showAddModal = ref(false)
+const stockWarning = ref(false)
+
+watch(() => workshopStore.isLowStock, (val) => {
+  stockWarning.value = val
+}, { immediate: true })
 
 const oilDate = ref('')
 const oilQuantity = ref(10)
@@ -60,6 +65,12 @@ function handleAdd() {
       purpose: oilPurpose.value || '制作酥油灯'
     })
   } else {
+    const requiredOil = prodQuantity.value * (LampOilConsumption[prodType.value] || 0)
+    if (requiredOil > workshopStore.currentOilStock) {
+      if (!confirm(`库存不足！制作 ${prodQuantity.value} 盏${LampTypeLabel[prodType.value]}需要 ${requiredOil}L 灯油，当前库存仅 ${workshopStore.currentOilStock}L。是否继续？`)) {
+        return
+      }
+    }
     workshopStore.addProduction({
       date: prodDate.value,
       type: prodType.value,
@@ -132,6 +143,74 @@ function deleteProduction(id: string) {
           <div class="stat-value">{{ workshopStore.productionByType[LampType.LOTUS] || 0 }}</div>
           <div class="stat-label">莲花灯制作 (盏)</div>
         </div>
+      </div>
+    </div>
+
+    <div v-if="workshopStore.isLowStock" class="stock-warning">
+      <AlertTriangle :size="20" />
+      <span>
+        <strong>库存预警：</strong>
+        当前灯油库存仅剩 <strong>{{ workshopStore.currentOilStock }}L</strong>，低于安全阈值 10L，请及时补充！
+      </span>
+    </div>
+
+    <div class="stock-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <Warehouse :size="20" />
+          库存核算
+        </h2>
+      </div>
+
+      <div class="stock-cards">
+        <div class="stock-card stock-main" :class="{ 'low': workshopStore.isLowStock }">
+          <div class="stock-icon">
+            <Droplets :size="28" />
+          </div>
+          <div class="stock-info">
+            <div class="stock-value">{{ workshopStore.currentOilStock }}<span class="unit">L</span></div>
+            <div class="stock-label">当前灯油库存</div>
+          </div>
+          <div class="stock-status">
+            <CheckCircle v-if="!workshopStore.isLowStock" :size="18" class="icon-ok" />
+            <AlertTriangle v-else :size="18" class="icon-warn" />
+          </div>
+        </div>
+
+        <div class="stock-card">
+          <div class="stock-info small">
+            <div class="stock-value small">{{ workshopStore.totalOilStocked }}<span class="unit">L</span></div>
+            <div class="stock-label">累计领用</div>
+          </div>
+        </div>
+
+        <div class="stock-card">
+          <div class="stock-info small">
+            <div class="stock-value small">{{ workshopStore.totalOilConsumed.toFixed(1) }}<span class="unit">L</span></div>
+            <div class="stock-label">累计消耗</div>
+          </div>
+        </div>
+
+        <div class="stock-card">
+          <div class="stock-info small">
+            <div class="stock-value small">{{ workshopStore.canMakeGhee }}<span class="unit">盏</span></div>
+            <div class="stock-label">可做酥油灯</div>
+          </div>
+        </div>
+
+        <div class="stock-card">
+          <div class="stock-info small">
+            <div class="stock-value small">{{ workshopStore.canMakeLotus }}<span class="unit">盏</span></div>
+            <div class="stock-label">可做莲花灯</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="oil-rate-tip">
+        <span>耗油系数：</span>
+        <span class="rate-item">酥油灯 0.5L/盏</span>
+        <span class="rate-item">莲花灯 0.3L/盏</span>
+        <span class="rate-item">电子灯/长明灯 0L</span>
       </div>
     </div>
 
@@ -479,6 +558,164 @@ function deleteProduction(id: string) {
   .count-num {
     color: #D4A853;
     font-weight: 600;
+  }
+}
+
+.stock-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border: 1px solid #ffb74d;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  color: #e65100;
+  font-size: 14px;
+
+  strong {
+    color: #bf360c;
+  }
+}
+
+.stock-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f0f0f0;
+}
+
+.section-header {
+  margin-bottom: 16px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.stock-cards {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.stock-card {
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+
+  &.stock-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, #e8f5e9 0%, #ffffff 100%);
+    border-color: #c8e6c9;
+
+    &.low {
+      background: linear-gradient(135deg, #fff8e1 0%, #ffffff 100%);
+      border-color: #ffe082;
+    }
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.stock-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #4FC3F7 0%, #0288D1 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stock-main.low .stock-icon {
+  background: linear-gradient(135deg, #FFB74D 0%, #F57C00 100%);
+}
+
+.stock-info {
+  flex: 1;
+}
+
+.stock-value {
+  font-size: 30px;
+  font-weight: 700;
+  color: #2e7d32;
+  line-height: 1.1;
+
+  &.small {
+    font-size: 22px;
+    color: #333;
+  }
+
+  .unit {
+    font-size: 14px;
+    font-weight: 500;
+    color: #888;
+    margin-left: 4px;
+  }
+}
+
+.stock-main.low .stock-value {
+  color: #e65100;
+}
+
+.stock-label {
+  font-size: 13px;
+  color: #888;
+  margin-top: 4px;
+}
+
+.stock-status {
+  flex-shrink: 0;
+}
+
+.icon-ok {
+  color: #4caf50;
+}
+
+.icon-warn {
+  color: #ff9800;
+  animation: pulse-warn 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-warn {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+.oil-rate-tip {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed #e0e0e0;
+  font-size: 12px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .rate-item {
+    padding: 3px 10px;
+    background: #f5f5f5;
+    border-radius: 10px;
+    color: #666;
   }
 }
 

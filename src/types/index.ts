@@ -12,6 +12,13 @@ export const LampTypeLabel: Record<LampType, string> = {
   [LampType.ETERNAL]: '长明灯'
 }
 
+export const LampOilConsumption: Record<LampType, number> = {
+  [LampType.GHEE]: 0.5,
+  [LampType.LOTUS]: 0.3,
+  [LampType.ELECTRONIC]: 0,
+  [LampType.ETERNAL]: 0
+}
+
 export enum LampStatus {
   ON = 'on',
   WARNING = 'warning',
