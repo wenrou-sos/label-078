@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { LampPosition } from '@/types'
 import { LampType, LampStatus, LampTypeLabel, LampStatusLabel } from '@/types'
 import { daysBetween, getTodayStr } from '@/lib/utils'
+import { useLampStore } from '@/stores/lamp'
 
 const props = defineProps<{
   lamp: LampPosition
@@ -11,6 +12,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   click: [lamp: LampPosition]
 }>()
+
+const lampStore = useLampStore()
+
+const isMatched = computed(() => lampStore.isLampMatched(props.lamp.id))
 
 const statusClass = computed(() => {
   switch (props.lamp.status) {
@@ -48,7 +53,13 @@ const daysLeft = computed(() => {
 <template>
   <div
     class="lamp-cell"
-    :class="statusClass"
+    :class="[
+      statusClass,
+      {
+        'search-highlight': lampStore.isSearching && isMatched,
+        'search-dim': lampStore.isSearching && !isMatched
+      }
+    ]"
     @click="emit('click', lamp)"
   >
     <div class="lamp-icon">{{ lampIcon }}</div>
@@ -165,6 +176,28 @@ const daysLeft = computed(() => {
   }
   50% {
     transform: scale(1.15);
+  }
+}
+
+.lamp-cell.search-highlight {
+  border-color: #D4A853 !important;
+  border-width: 3px !important;
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(212, 168, 83, 0.5);
+  z-index: 2;
+
+  .lamp-icon {
+    filter: drop-shadow(0 0 10px rgba(212, 168, 83, 0.8));
+  }
+}
+
+.lamp-cell.search-dim {
+  opacity: 0.35;
+  transform: scale(0.97);
+
+  &:hover {
+    opacity: 0.5;
+    transform: scale(1);
   }
 }
 </style>

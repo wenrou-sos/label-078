@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useLampStore } from '@/stores/lamp'
 import HallSelector from '@/components/HallSelector/HallSelector.vue'
 import LampGrid from '@/components/LampGrid/LampGrid.vue'
@@ -7,6 +8,11 @@ import type { LampPosition } from '@/types'
 import { LampStatus } from '@/types'
 
 const lampStore = useLampStore()
+const searchInput = ref('')
+
+function handleSearch() {
+  lampStore.setSearchKeyword(searchInput.value)
+}
 
 function handleLampClick(lamp: LampPosition) {
   lampStore.selectLamp(lamp.id)
@@ -49,6 +55,29 @@ function handleLampClick(lamp: LampPosition) {
             <div class="stat-label">总计</div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="search-bar">
+      <div class="search-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input
+          v-model="searchInput"
+          type="text"
+          class="search-input"
+          placeholder="搜索供奉人姓名..."
+          @input="handleSearch"
+        />
+        <button
+          v-if="searchInput"
+          class="search-clear"
+          @click="searchInput = ''; handleSearch()"
+        >
+          ✕
+        </button>
+      </div>
+      <div class="search-hint" v-if="lampStore.isSearching">
+        找到 <span class="highlight">{{ lampStore.matchedLampIds.size }}</span> 盏匹配的灯
       </div>
     </div>
 
@@ -162,6 +191,82 @@ function handleLampClick(lamp: LampPosition) {
 
 .stat-total .stat-value {
   color: #D4A853;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 420px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 36px;
+  font-size: 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  outline: none;
+  background: #fff;
+  transition: all 0.25s ease;
+
+  &:focus {
+    border-color: #D4A853;
+    box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.12);
+  }
+
+  &::placeholder {
+    color: #bbb;
+  }
+}
+
+.search-clear {
+  position: absolute;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: #e0e0e0;
+  color: #666;
+  border-radius: 50%;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #bbb;
+    color: #fff;
+  }
+}
+
+.search-hint {
+  font-size: 13px;
+  color: #888;
+
+  .highlight {
+    color: #D4A853;
+    font-weight: 600;
+  }
 }
 
 .legend-bar {

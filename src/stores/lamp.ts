@@ -10,6 +10,7 @@ export const useLampStore = defineStore('lamp', () => {
   const currentHallId = ref<string>(halls[0].id)
   const lamps = ref<LampPosition[]>(lampList)
   const selectedLampId = ref<string | null>(null)
+  const searchKeyword = ref<string>('')
 
   const currentHall = computed(() => {
     return hallList.value.find(h => h.id === currentHallId.value)
@@ -18,6 +19,20 @@ export const useLampStore = defineStore('lamp', () => {
   const currentHallLamps = computed(() => {
     return getLampsByHall(currentHallId.value)
   })
+
+  const matchedLampIds = computed(() => {
+    if (!searchKeyword.value.trim()) return new Set<string>()
+    const keyword = searchKeyword.value.trim().toLowerCase()
+    const ids = new Set<string>()
+    lamps.value.forEach(lamp => {
+      if (lamp.devoteeName.toLowerCase().includes(keyword)) {
+        ids.add(lamp.id)
+      }
+    })
+    return ids
+  })
+
+  const isSearching = computed(() => searchKeyword.value.trim().length > 0)
 
   const selectedLamp = computed(() => {
     if (!selectedLampId.value) return null
@@ -82,6 +97,15 @@ export const useLampStore = defineStore('lamp', () => {
     return currentHallLamps.value.find(l => l.row === row && l.col === col)
   }
 
+  function setSearchKeyword(keyword: string) {
+    searchKeyword.value = keyword
+  }
+
+  function isLampMatched(lampId: string): boolean {
+    if (!isSearching.value) return true
+    return matchedLampIds.value.has(lampId)
+  }
+
   return {
     hallList,
     currentHallId,
@@ -91,9 +115,14 @@ export const useLampStore = defineStore('lamp', () => {
     selectedLamp,
     statusCount,
     warningLamps,
+    searchKeyword,
+    matchedLampIds,
+    isSearching,
     selectHall,
     selectLamp,
     renewLamp,
-    getLampByPosition
+    getLampByPosition,
+    setSearchKeyword,
+    isLampMatched
   }
 })

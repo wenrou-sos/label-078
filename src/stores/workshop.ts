@@ -9,6 +9,23 @@ export const useWorkshopStore = defineStore('workshop', () => {
   const oilUsages = ref<OilUsageRecord[]>([...oilUsageList])
   const productions = ref<ProductionRecord[]>([...productionList])
 
+  const filterStartDate = ref<string>('')
+  const filterEndDate = ref<string>('')
+
+  const isDateInRange = (date: string): boolean => {
+    if (filterStartDate.value && date < filterStartDate.value) return false
+    if (filterEndDate.value && date > filterEndDate.value) return false
+    return true
+  }
+
+  const filteredOilUsages = computed(() => {
+    return oilUsages.value.filter(item => isDateInRange(item.date))
+  })
+
+  const filteredProductions = computed(() => {
+    return productions.value.filter(item => isDateInRange(item.date))
+  })
+
   const monthlyOilUsage = computed(() => {
     return oilUsages.value
       .filter(item => isCurrentMonth(item.date))
@@ -33,6 +50,16 @@ export const useWorkshopStore = defineStore('workshop', () => {
       })
     return result
   })
+
+  function setDateRange(start: string, end: string) {
+    filterStartDate.value = start
+    filterEndDate.value = end
+  }
+
+  function resetDateRange() {
+    filterStartDate.value = ''
+    filterEndDate.value = ''
+  }
 
   function addOilUsage(record: Omit<OilUsageRecord, 'id'>) {
     const newRecord: OilUsageRecord = {
@@ -67,9 +94,15 @@ export const useWorkshopStore = defineStore('workshop', () => {
   return {
     oilUsages,
     productions,
+    filterStartDate,
+    filterEndDate,
+    filteredOilUsages,
+    filteredProductions,
     monthlyOilUsage,
     monthlyProduction,
     productionByType,
+    setDateRange,
+    resetDateRange,
     addOilUsage,
     addProduction,
     deleteOilUsage,

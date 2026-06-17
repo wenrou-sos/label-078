@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useWorkshopStore } from '@/stores/workshop'
 import { LampType, LampTypeLabel } from '@/types'
 import { Plus, Trash2, Droplets, Package, TrendingUp } from 'lucide-vue-next'
@@ -21,6 +21,20 @@ const prodOperator = ref('')
 
 const today = new Date()
 const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
+const startDate = computed({
+  get: () => workshopStore.filterStartDate,
+  set: (val: string) => workshopStore.setDateRange(val, endDate.value)
+})
+
+const endDate = computed({
+  get: () => workshopStore.filterEndDate,
+  set: (val: string) => workshopStore.setDateRange(startDate.value, val)
+})
+
+function resetFilter() {
+  workshopStore.resetDateRange()
+}
 
 function openAddModal() {
   if (activeTab.value === 'oil') {
@@ -138,6 +152,31 @@ function deleteProduction(id: string) {
       </button>
     </div>
 
+    <div class="filter-bar">
+      <div class="filter-label">日期范围：</div>
+      <div class="date-inputs">
+        <input
+          v-model="startDate"
+          type="date"
+          class="date-input"
+        />
+        <span class="date-separator">至</span>
+        <input
+          v-model="endDate"
+          type="date"
+          class="date-input"
+        />
+      </div>
+      <button class="reset-btn" @click="resetFilter">重置</button>
+      <div class="filter-count">
+        共
+        <span class="count-num">
+          {{ activeTab === 'oil' ? workshopStore.filteredOilUsages.length : workshopStore.filteredProductions.length }}
+        </span>
+        条记录
+      </div>
+    </div>
+
     <div class="table-card">
       <table v-if="activeTab === 'oil'" class="data-table">
         <thead>
@@ -150,7 +189,7 @@ function deleteProduction(id: string) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in workshopStore.oilUsages" :key="item.id">
+          <tr v-for="item in workshopStore.filteredOilUsages" :key="item.id">
             <td>{{ item.date }}</td>
             <td class="number-cell">{{ item.quantity }}</td>
             <td>{{ item.receiver }}</td>
@@ -176,7 +215,7 @@ function deleteProduction(id: string) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in workshopStore.productions" :key="item.id">
+          <tr v-for="item in workshopStore.filteredProductions" :key="item.id">
             <td>{{ item.date }}</td>
             <td>
               <span class="type-badge">{{ LampTypeLabel[item.type] }}</span>
@@ -365,11 +404,82 @@ function deleteProduction(id: string) {
 .tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   background: #f5f5f5;
   padding: 6px;
   border-radius: 12px;
   width: fit-content;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.date-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-input {
+  padding: 8px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s ease;
+
+  &:focus {
+    border-color: #D4A853;
+    box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.1);
+  }
+}
+
+.date-separator {
+  font-size: 13px;
+  color: #999;
+}
+
+.reset-btn {
+  padding: 8px 18px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  color: #666;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: #D4A853;
+    color: #D4A853;
+    background: #fdf9f0;
+  }
+}
+
+.filter-count {
+  margin-left: auto;
+  font-size: 13px;
+  color: #888;
+
+  .count-num {
+    color: #D4A853;
+    font-weight: 600;
+  }
 }
 
 .tab-btn {
